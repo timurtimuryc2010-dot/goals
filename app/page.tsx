@@ -95,7 +95,7 @@ export default function Home() {
                 <motion.button
                   whileTap={{ scale: 0.92 }}
                   onClick={() => setIsEditingOrder(!isEditingOrder)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border backdrop-blur-md ${
+                  className={`px-3.5 py-1 rounded-full text-sm font-semibold transition-all border backdrop-blur-md ${
                     isEditingOrder 
                       ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' 
                       : 'bg-white/5 border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10'
