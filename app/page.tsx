@@ -79,7 +79,7 @@ export default function Home() {
       <main className="flex-1 min-h-screen pb-24 md:pb-0">
         {/* Mobile Header - Telegram-Style with Centered Title */}
         <header 
-          className="md:hidden fixed top-0 left-0 right-0 z-40 px-5 pt-14 pb-4 border-b transition-all duration-150 flex items-center justify-center"
+          className="md:hidden fixed top-0 left-0 right-0 z-40 px-5 pt-14 pb-4 border-b transition-all duration-150"
           style={{
             backgroundColor: `rgba(0, 0, 0, ${headerOpacity * 0.6})`,
             backdropFilter: `blur(${headerOpacity * 20}px) saturate(${100 + headerOpacity * 80}%)`,
@@ -88,7 +88,7 @@ export default function Home() {
           }}
         >
           {/* Left Action Button */}
-          <div className="absolute left-5">
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 pt-5">
             {activeTab === 'total' ? (
               <motion.button
                 whileTap={{ scale: 0.92 }}
