@@ -399,7 +399,7 @@ export function EmptyGoals() {
       </div>
       <h3 className="text-lg font-semibold text-foreground mb-1">No goals yet</h3>
       <p className="text-sm text-muted-foreground max-w-xs">
-        Start tracking your savings goals by tapping the + button below.
+        Start tracking your savings goals by tapping the + button above.
       </p>
     </motion.div>
   )

@@ -56,7 +56,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 min-h-screen pb-24 md:pb-0">
         {/* Mobile Header */}
-        <header className="md:hidden glass border-b border-glass-border px-5 pt-16 pb-4 flex items-center justify-between">
+        <header className="md:hidden glass border-b border-glass-border px-5 pt-10 pb-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">
             {getTabTitle()}
           </h1>
