@@ -1,12 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { LayoutGrid, List, Plus } from 'lucide-react'
+import { LayoutGrid, List, Plus, Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+export type TabType = 'overview' | 'goals' | 'total'
+
 interface DesktopSidebarProps {
-  activeTab: 'overview' | 'goals'
-  onTabChange: (tab: 'overview' | 'goals') => void
+  activeTab: TabType
+  onTabChange: (tab: TabType) => void
   onAddGoal: () => void
 }
 
@@ -14,6 +16,7 @@ export function DesktopSidebar({ activeTab, onTabChange, onAddGoal }: DesktopSid
   const navItems = [
     { id: 'overview' as const, label: 'Overview', icon: LayoutGrid },
     { id: 'goals' as const, label: 'Goals', icon: List },
+    { id: 'total' as const, label: 'Total Progress', icon: Layers },
   ]
 
   return (
@@ -32,7 +35,7 @@ export function DesktopSidebar({ activeTab, onTabChange, onAddGoal }: DesktopSid
               <button
                 onClick={() => onTabChange(item.id)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all',
+                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all relative',
                   activeTab === item.id
                     ? 'bg-secondary text-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
@@ -69,8 +72,8 @@ export function DesktopSidebar({ activeTab, onTabChange, onAddGoal }: DesktopSid
 }
 
 interface MobileTabBarProps {
-  activeTab: 'overview' | 'goals'
-  onTabChange: (tab: 'overview' | 'goals') => void
+  activeTab: TabType
+  onTabChange: (tab: TabType) => void
   onAddGoal: () => void
 }
 
@@ -78,34 +81,35 @@ export function MobileTabBar({ activeTab, onTabChange, onAddGoal }: MobileTabBar
   const navItems = [
     { id: 'overview' as const, label: 'Overview', icon: LayoutGrid },
     { id: 'goals' as const, label: 'Goals', icon: List },
+    { id: 'total' as const, label: 'Total', icon: Layers },
   ]
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 glass border-t border-glass-border safe-bottom">
-      <div className="flex items-center justify-around h-16 px-4">
+      <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item, index) => (
           <button
             key={item.id}
             onClick={() => onTabChange(item.id)}
             className={cn(
-              'flex flex-col items-center gap-1 py-2 px-4 transition-colors',
+              'flex flex-col items-center gap-1 py-2 px-3 transition-colors min-w-0',
               activeTab === item.id
                 ? 'text-success'
                 : 'text-muted-foreground'
             )}
           >
             <item.icon className="w-5 h-5" />
-            <span className="text-xs font-medium">{item.label}</span>
+            <span className="text-[10px] font-medium truncate">{item.label}</span>
           </button>
         ))}
 
-        {/* Center Add Button */}
+        {/* Floating Add Button */}
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={onAddGoal}
-          className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full bg-success text-success-foreground flex items-center justify-center shadow-lg shadow-success/30"
+          className="absolute left-1/2 -translate-x-1/2 -top-6 w-12 h-12 rounded-full bg-success text-success-foreground flex items-center justify-center shadow-lg shadow-success/30"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-5 h-5" />
         </motion.button>
       </div>
     </nav>

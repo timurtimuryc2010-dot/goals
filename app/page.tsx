@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { DesktopSidebar, MobileTabBar } from '@/components/navigation'
-import { OverviewView, GoalsListView } from '@/components/views'
+import { DesktopSidebar, MobileTabBar, TabType } from '@/components/navigation'
+import { OverviewView, GoalsListView, TotalProgressView } from '@/components/views'
 import { EditGoalSheet } from '@/components/edit-goal-sheet'
 import { Goal } from '@/components/goal-provider'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'goals'>('overview')
+  const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
 
@@ -27,6 +27,22 @@ export default function Home() {
     setEditingGoal(null)
   }
 
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case 'overview': return 'Overview'
+      case 'goals': return 'Goals'
+      case 'total': return 'Total Progress'
+    }
+  }
+
+  const getTabDescription = () => {
+    switch (activeTab) {
+      case 'overview': return 'Track all your goals at a glance'
+      case 'goals': return 'Detailed view of your savings goals'
+      case 'total': return 'Global balance and smart allocation'
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
@@ -41,26 +57,24 @@ export default function Home() {
         {/* Mobile Header */}
         <header className="md:hidden glass border-b border-glass-border px-5 py-4 safe-top">
           <h1 className="text-xl font-bold text-foreground">
-            {activeTab === 'overview' ? 'Overview' : 'Goals'}
+            {getTabTitle()}
           </h1>
         </header>
 
         {/* Desktop Header */}
         <header className="hidden md:block px-8 py-6 border-b border-border">
           <h1 className="text-2xl font-bold text-foreground">
-            {activeTab === 'overview' ? 'Overview' : 'Goals'}
+            {getTabTitle()}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {activeTab === 'overview'
-              ? 'Track all your goals at a glance'
-              : 'Detailed view of your savings goals'}
+            {getTabDescription()}
           </p>
         </header>
 
         {/* Content Area */}
         <div className="p-5 md:p-8">
           <AnimatePresence mode="wait">
-            {activeTab === 'overview' ? (
+            {activeTab === 'overview' && (
               <motion.div
                 key="overview"
                 initial={{ opacity: 0, x: -20 }}
@@ -70,7 +84,8 @@ export default function Home() {
               >
                 <OverviewView onEditGoal={handleEditGoal} />
               </motion.div>
-            ) : (
+            )}
+            {activeTab === 'goals' && (
               <motion.div
                 key="goals"
                 initial={{ opacity: 0, x: 20 }}
@@ -79,6 +94,17 @@ export default function Home() {
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               >
                 <GoalsListView onEditGoal={handleEditGoal} />
+              </motion.div>
+            )}
+            {activeTab === 'total' && (
+              <motion.div
+                key="total"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <TotalProgressView />
               </motion.div>
             )}
           </AnimatePresence>
