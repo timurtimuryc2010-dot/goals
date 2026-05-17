@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { DesktopSidebar, MobileTabBar, TabType } from '@/components/navigation'
 import { OverviewView, GoalsListView, TotalProgressView } from '@/components/views'
@@ -13,6 +13,19 @@ export default function Home() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [isEditingOrder, setIsEditingOrder] = useState(false)
+  const [scrollY, setScrollY] = useState(0)
+
+  // Scroll listener for progressive header blur
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Calculate header opacity based on scroll (0-100px range)
+  const headerOpacity = Math.min(scrollY / 100, 1)
 
   const handleAddGoal = () => {
     setEditingGoal(null)
@@ -64,8 +77,16 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1 min-h-screen pb-24 md:pb-0">
-        {/* Mobile Header */}
-        <header className="md:hidden glass border-b border-glass-border px-5 pt-10 pb-4 flex items-center justify-between">
+        {/* Mobile Header - Progressive Blur on Scroll */}
+        <header 
+          className="md:hidden fixed top-0 left-0 right-0 z-40 px-5 pt-10 pb-4 flex items-center justify-between border-b transition-all duration-150"
+          style={{
+            backgroundColor: `rgba(0, 0, 0, ${headerOpacity * 0.6})`,
+            backdropFilter: `blur(${headerOpacity * 20}px) saturate(${100 + headerOpacity * 80}%)`,
+            WebkitBackdropFilter: `blur(${headerOpacity * 20}px) saturate(${100 + headerOpacity * 80}%)`,
+            borderColor: `rgba(255, 255, 255, ${headerOpacity * 0.1})`,
+          }}
+        >
           <h1 className="text-xl font-bold text-foreground">
             {getTabTitle()}
           </h1>
@@ -93,14 +114,44 @@ export default function Home() {
           )}
         </header>
 
-        {/* Desktop Header */}
-        <header className="hidden md:block px-8 py-6 border-b border-border">
-          <h1 className="text-2xl font-bold text-foreground">
-            {getTabTitle()}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {getTabDescription()}
-          </p>
+        {/* Mobile Header Spacer */}
+        <div className="md:hidden h-20" />
+
+        {/* Desktop Header - with Edit button for Total tab */}
+        <header 
+          className="hidden md:flex items-center justify-between px-8 py-6 border-b transition-all duration-150"
+          style={{
+            backgroundColor: `rgba(0, 0, 0, ${headerOpacity * 0.4})`,
+            backdropFilter: `blur(${headerOpacity * 16}px)`,
+            WebkitBackdropFilter: `blur(${headerOpacity * 16}px)`,
+            borderColor: `rgba(255, 255, 255, ${0.05 + headerOpacity * 0.05})`,
+          }}
+        >
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {getTabTitle()}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {getTabDescription()}
+            </p>
+          </div>
+          
+          {/* Desktop Edit Button for Total Tab */}
+          {activeTab === 'total' && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsEditingOrder(!isEditingOrder)}
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all border backdrop-blur-md ${
+                isEditingOrder 
+                  ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' 
+                  : 'bg-white/5 border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10'
+              }`}
+            >
+              {isEditingOrder ? 'Done' : 'Edit Priority'}
+            </motion.button>
+          )}
         </header>
 
         {/* Content Area */}
