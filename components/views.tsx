@@ -3,8 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGoals, Goal } from './goal-provider'
 import { GoalCard, EmptyGoals } from './goal-card'
-import { useState, useRef, useEffect } from 'react'
-import { Plus, Minus, ArrowUp, TrendingUp } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Plus, Minus, ArrowUp, TrendingUp, Pin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface OverviewViewProps {
@@ -196,8 +196,27 @@ export function TotalProgressView() {
   const totalTarget = goals.reduce((sum, g) => sum + g.target, 0)
   const overallProgress = totalTarget > 0 ? (totalBalance / totalTarget) * 100 : 0
 
-  // Sort by target ascending - cheapest at bottom (reversed for visual ladder)
-  const sortedGoals = [...goals].sort((a, b) => b.target - a.target)
+  // Sort goals by priority:
+  // 1. Pinned incomplete goals (by pinOrder)
+  // 2. Unpinned incomplete goals (by proximity to 100%, highest first)
+  // 3. Completed goals (muted at bottom)
+  const pinnedIncomplete = goals
+    .filter(g => g.isPinned && g.current < g.target)
+    .sort((a, b) => (a.pinOrder ?? 0) - (b.pinOrder ?? 0))
+
+  const unpinnedIncomplete = goals
+    .filter(g => !g.isPinned && g.current < g.target)
+    .sort((a, b) => {
+      const aPercent = a.current / a.target
+      const bPercent = b.current / b.target
+      return bPercent - aPercent // Highest percentage first
+    })
+
+  const completedGoals = goals
+    .filter(g => g.current >= g.target)
+    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
+
+  const sortedGoals = [...pinnedIncomplete, ...unpinnedIncomplete, ...completedGoals]
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -224,6 +243,17 @@ export function TotalProgressView() {
       globalDeductMoney(amount)
       setCustomAmount('')
     }
+  }
+
+  // Helper text based on current state
+  const getHelperText = () => {
+    if (pinnedIncomplete.length > 0) {
+      return `Money routes to pinned goals first (${pinnedIncomplete.length} pinned)`
+    }
+    if (unpinnedIncomplete.length > 0) {
+      return 'Money routes to goals closest to completion'
+    }
+    return 'All goals are complete!'
   }
 
   if (goals.length === 0) {
@@ -322,40 +352,107 @@ export function TotalProgressView() {
         </div>
 
         <p className="text-xs text-muted-foreground mt-3 text-center">
-          Money cascades to the cheapest incomplete goal first
+          {getHelperText()}
         </p>
       </motion.div>
 
-      {/* Goal Ladder - Sorted by target (expensive at top, cheap at bottom) */}
+      {/* Goal Priority List */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <ArrowUp className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Goal Ladder
-          </h2>
-        </div>
-        <p className="text-xs text-muted-foreground mb-4">
-          Sorted by target price - climb from bottom to top
-        </p>
+        {/* Pinned Section */}
+        {pinnedIncomplete.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Pin className="w-4 h-4 text-success" />
+              <h2 className="text-sm font-semibold text-success uppercase tracking-wide">
+                Pinned Goals ({pinnedIncomplete.length})
+              </h2>
+            </div>
+            <motion.div className="space-y-2" layout>
+              <AnimatePresence mode="popLayout">
+                {pinnedIncomplete.map((goal, index) => (
+                  <motion.div
+                    key={goal.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <GoalCard
+                      goal={goal}
+                      variant="ladder"
+                      showActions={false}
+                      showPinControls={true}
+                      showReorderControls={true}
+                      isFirstPinned={index === 0}
+                      isLastPinned={index === pinnedIncomplete.length - 1}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        )}
 
-        <motion.div className="space-y-2" layout>
-          <AnimatePresence mode="popLayout">
-            {sortedGoals.map((goal, index) => (
-              <motion.div
-                key={goal.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <GoalCard
-                  goal={goal}
-                  variant="ladder"
-                  showActions={false}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        {/* Unpinned Incomplete Section */}
+        {unpinnedIncomplete.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <ArrowUp className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                In Progress ({unpinnedIncomplete.length})
+              </h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Sorted by proximity to completion
+            </p>
+            <motion.div className="space-y-2" layout>
+              <AnimatePresence mode="popLayout">
+                {unpinnedIncomplete.map((goal, index) => (
+                  <motion.div
+                    key={goal.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (pinnedIncomplete.length + index) * 0.05 }}
+                  >
+                    <GoalCard
+                      goal={goal}
+                      variant="ladder"
+                      showActions={false}
+                      showPinControls={true}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Completed Section */}
+        {completedGoals.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+              Completed ({completedGoals.length})
+            </h2>
+            <motion.div className="space-y-2" layout>
+              <AnimatePresence mode="popLayout">
+                {completedGoals.map((goal, index) => (
+                  <motion.div
+                    key={goal.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (pinnedIncomplete.length + unpinnedIncomplete.length + index) * 0.05 }}
+                  >
+                    <GoalCard
+                      goal={goal}
+                      variant="ladder"
+                      showActions={false}
+                      showPinControls={false}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   )

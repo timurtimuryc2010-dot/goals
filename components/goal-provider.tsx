@@ -11,6 +11,8 @@ export interface Goal {
   image?: string
   createdAt: number
   completedAt?: number
+  isPinned?: boolean
+  pinOrder?: number
 }
 
 interface GoalContextType {
@@ -22,6 +24,8 @@ interface GoalContextType {
   globalAddMoney: (amount: number) => void
   globalDeductMoney: (amount: number) => void
   getTotalBalance: () => number
+  togglePin: (id: string) => void
+  reorderPinned: (id: string, direction: 'up' | 'down') => void
 }
 
 const GoalContext = createContext<GoalContextType | undefined>(undefined)
@@ -100,28 +104,98 @@ export function GoalProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  // Toggle pin status
+  const togglePin = (id: string) => {
+    setGoals(prev => {
+      const goal = prev.find(g => g.id === id)
+      if (!goal) return prev
+
+      if (goal.isPinned) {
+        // Unpinning - remove pinOrder and shift others
+        return prev.map(g => {
+          if (g.id === id) {
+            return { ...g, isPinned: false, pinOrder: undefined }
+          }
+          if (g.isPinned && g.pinOrder !== undefined && goal.pinOrder !== undefined && g.pinOrder > goal.pinOrder) {
+            return { ...g, pinOrder: g.pinOrder - 1 }
+          }
+          return g
+        })
+      } else {
+        // Pinning - add to end of pinned list
+        const maxPinOrder = prev.filter(g => g.isPinned).reduce((max, g) => Math.max(max, g.pinOrder ?? 0), -1)
+        return prev.map(g => {
+          if (g.id === id) {
+            return { ...g, isPinned: true, pinOrder: maxPinOrder + 1 }
+          }
+          return g
+        })
+      }
+    })
+  }
+
+  // Reorder pinned goals
+  const reorderPinned = (id: string, direction: 'up' | 'down') => {
+    setGoals(prev => {
+      const goal = prev.find(g => g.id === id)
+      if (!goal || !goal.isPinned || goal.pinOrder === undefined) return prev
+
+      const pinnedGoals = prev.filter(g => g.isPinned).sort((a, b) => (a.pinOrder ?? 0) - (b.pinOrder ?? 0))
+      const currentIndex = pinnedGoals.findIndex(g => g.id === id)
+      
+      if (direction === 'up' && currentIndex === 0) return prev
+      if (direction === 'down' && currentIndex === pinnedGoals.length - 1) return prev
+
+      const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+      const swapGoal = pinnedGoals[swapIndex]
+      if (!swapGoal) return prev
+
+      return prev.map(g => {
+        if (g.id === id) {
+          return { ...g, pinOrder: swapGoal.pinOrder }
+        }
+        if (g.id === swapGoal.id) {
+          return { ...g, pinOrder: goal.pinOrder }
+        }
+        return g
+      })
+    })
+  }
+
   // Get total balance across all goals
   const getTotalBalance = () => {
     return goals.reduce((sum, g) => sum + g.current, 0)
   }
 
-  // Global add money - cascades from cheapest incomplete goal upwards
+  // Global add money - prioritizes pinned incomplete goals first, then closest to completion
   const globalAddMoney = (amount: number) => {
     if (amount <= 0) return
 
     setGoals(prev => {
-      // Sort by target (ascending) - cheapest first
-      const sortedByTarget = [...prev].sort((a, b) => a.target - b.target)
+      // Separate pinned and unpinned incomplete goals
+      const pinnedIncomplete = prev
+        .filter(g => g.isPinned && g.current < g.target)
+        .sort((a, b) => (a.pinOrder ?? 0) - (b.pinOrder ?? 0))
+      
+      const unpinnedIncomplete = prev
+        .filter(g => !g.isPinned && g.current < g.target)
+        .sort((a, b) => {
+          // Sort by proximity to completion (highest percentage first)
+          const aPercent = a.current / a.target
+          const bPercent = b.current / b.target
+          return bPercent - aPercent
+        })
+
+      // Combined priority order: pinned first, then unpinned sorted by completion proximity
+      const priorityOrder = [...pinnedIncomplete, ...unpinnedIncomplete]
+
       let remaining = amount
       const updatedGoals = new Map<string, Goal>()
 
-      // Distribute money to incomplete goals starting from cheapest
-      for (const goal of sortedByTarget) {
+      // Distribute money according to priority
+      for (const goal of priorityOrder) {
         if (remaining <= 0) break
         
-        const isIncomplete = goal.current < goal.target
-        if (!isIncomplete) continue
-
         const spaceAvailable = goal.target - goal.current
         const toAdd = Math.min(remaining, spaceAvailable)
         
@@ -138,16 +212,21 @@ export function GoalProvider({ children }: { children: ReactNode }) {
       }
 
       // If there's still remaining money and all goals are complete,
-      // add overflow to the most expensive goal
-      if (remaining > 0) {
-        const lastGoal = sortedByTarget[sortedByTarget.length - 1]
-        if (lastGoal) {
-          const existing = updatedGoals.get(lastGoal.id) || lastGoal
-          updatedGoals.set(lastGoal.id, {
-            ...existing,
-            current: existing.current + remaining
-          })
-        }
+      // add overflow to the last goal in priority order
+      if (remaining > 0 && priorityOrder.length > 0) {
+        const lastGoal = priorityOrder[priorityOrder.length - 1]
+        const existing = updatedGoals.get(lastGoal.id) || lastGoal
+        updatedGoals.set(lastGoal.id, {
+          ...existing,
+          current: existing.current + remaining
+        })
+      } else if (remaining > 0 && prev.length > 0) {
+        // If no incomplete goals, add to any goal
+        const anyGoal = prev[0]
+        updatedGoals.set(anyGoal.id, {
+          ...anyGoal,
+          current: anyGoal.current + remaining
+        })
       }
 
       return prev.map(g => updatedGoals.get(g.id) || g)
@@ -196,7 +275,9 @@ export function GoalProvider({ children }: { children: ReactNode }) {
       adjustAmount,
       globalAddMoney,
       globalDeductMoney,
-      getTotalBalance
+      getTotalBalance,
+      togglePin,
+      reorderPinned
     }}>
       {children}
     </GoalContext.Provider>
