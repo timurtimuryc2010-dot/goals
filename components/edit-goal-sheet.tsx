@@ -58,6 +58,7 @@ export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
 
     // Validate required fields
     if (!trimmedName || targetAmount <= 0) {
+      console.log('[v0] Validation failed:', { trimmedName, targetAmount })
       return
     }
 
@@ -67,6 +68,8 @@ export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
       target: targetAmount,
       image,
     }
+
+    console.log('[v0] Submitting goal:', goalData, 'isEditing:', isEditing)
 
     if (isEditing && goal) {
       updateGoal(goal.id, goalData)
