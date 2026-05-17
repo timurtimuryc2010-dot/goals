@@ -101,6 +101,7 @@ export function OverviewView({ onEditGoal }: OverviewViewProps) {
                 goal={goal}
                 variant="grid"
                 onEdit={() => onEditGoal(goal)}
+                showPinControls={false}
               />
             ))}
           </AnimatePresence>
@@ -154,6 +155,7 @@ export function GoalsListView({ onEditGoal }: GoalsListViewProps) {
                   goal={goal}
                   variant="list"
                   onEdit={() => onEditGoal(goal)}
+                  showPinControls={false}
                 />
               ))}
             </AnimatePresence>
@@ -175,6 +177,7 @@ export function GoalsListView({ onEditGoal }: GoalsListViewProps) {
                   goal={goal}
                   variant="list"
                   onEdit={() => onEditGoal(goal)}
+                  showPinControls={false}
                 />
               ))}
             </AnimatePresence>
@@ -186,7 +189,11 @@ export function GoalsListView({ onEditGoal }: GoalsListViewProps) {
 }
 
 // Total Progress View - New Global Dashboard
-export function TotalProgressView() {
+interface TotalProgressViewProps {
+  isEditingOrder?: boolean
+}
+
+export function TotalProgressView({ isEditingOrder = false }: TotalProgressViewProps) {
   const { goals, globalAddMoney, globalDeductMoney, getTotalBalance } = useGoals()
   const [customAmount, setCustomAmount] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
@@ -207,9 +214,10 @@ export function TotalProgressView() {
   const unpinnedIncomplete = goals
     .filter(g => !g.isPinned && g.current < g.target)
     .sort((a, b) => {
-      const aPercent = a.current / a.target
-      const bPercent = b.current / b.target
-      return bPercent - aPercent // Highest percentage first
+      // Sort by remaining amount (smallest first)
+      const aRemaining = a.target - a.current
+      const bRemaining = b.target - b.current
+      return aRemaining - bRemaining
     })
 
   const completedGoals = goals
@@ -251,7 +259,7 @@ export function TotalProgressView() {
       return `Money routes to pinned goals first (${pinnedIncomplete.length} pinned)`
     }
     if (unpinnedIncomplete.length > 0) {
-      return 'Money routes to goals closest to completion'
+      return 'Money routes to goals closest to completion first'
     }
     return 'All goals are complete!'
   }
@@ -380,8 +388,8 @@ export function TotalProgressView() {
                       goal={goal}
                       variant="ladder"
                       showActions={false}
-                      showPinControls={true}
-                      showReorderControls={true}
+                      showPinControls={isEditingOrder}
+                      showReorderControls={isEditingOrder}
                       isFirstPinned={index === 0}
                       isLastPinned={index === pinnedIncomplete.length - 1}
                     />
@@ -402,7 +410,7 @@ export function TotalProgressView() {
               </h2>
             </div>
             <p className="text-xs text-muted-foreground mb-4">
-              Sorted by proximity to completion
+              Sorted by smallest remaining amount
             </p>
             <motion.div className="space-y-2" layout>
               <AnimatePresence mode="popLayout">
@@ -417,7 +425,7 @@ export function TotalProgressView() {
                       goal={goal}
                       variant="ladder"
                       showActions={false}
-                      showPinControls={true}
+                      showPinControls={isEditingOrder}
                     />
                   </motion.div>
                 ))}

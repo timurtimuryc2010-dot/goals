@@ -12,6 +12,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const [isEditingOrder, setIsEditingOrder] = useState(false)
 
   const handleAddGoal = () => {
     setEditingGoal(null)
@@ -26,6 +27,14 @@ export default function Home() {
   const handleCloseSheet = () => {
     setIsSheetOpen(false)
     setEditingGoal(null)
+  }
+
+  // Reset editing mode when switching away from Total tab
+  const handleTabChange = (tab: TabType) => {
+    if (tab !== 'total') {
+      setIsEditingOrder(false)
+    }
+    setActiveTab(tab)
   }
 
   const getTabTitle = () => {
@@ -49,7 +58,7 @@ export default function Home() {
       {/* Desktop Sidebar */}
       <DesktopSidebar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         onAddGoal={handleAddGoal}
       />
 
@@ -60,13 +69,24 @@ export default function Home() {
           <h1 className="text-xl font-bold text-foreground">
             {getTabTitle()}
           </h1>
-          <button
-            onClick={handleAddGoal}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1"
-            aria-label="Add new goal"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          {activeTab === 'total' ? (
+            <button
+              onClick={() => setIsEditingOrder(!isEditingOrder)}
+              className={`text-sm font-semibold transition-colors ${
+                isEditingOrder ? 'text-blue-500' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {isEditingOrder ? 'Done' : 'Edit'}
+            </button>
+          ) : (
+            <button
+              onClick={handleAddGoal}
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1"
+              aria-label="Add new goal"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          )}
         </header>
 
         {/* Desktop Header */}
@@ -112,7 +132,7 @@ export default function Home() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               >
-                <TotalProgressView />
+                <TotalProgressView isEditingOrder={isEditingOrder} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -122,7 +142,7 @@ export default function Home() {
       {/* Mobile Tab Bar */}
       <MobileTabBar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
       />
 
       {/* Edit/Add Goal Sheet */}

@@ -22,7 +22,7 @@ export function GoalCard({
   variant = 'grid', 
   onEdit, 
   showActions = true,
-  showPinControls = true,
+  showPinControls = false,
   showReorderControls = false,
   isFirstPinned = false,
   isLastPinned = false
