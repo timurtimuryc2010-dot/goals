@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { LayoutGrid, List, Plus, Layers } from 'lucide-react'
+import { LayoutGrid, List, Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type TabType = 'overview' | 'goals' | 'total'
@@ -77,7 +77,7 @@ interface MobileTabBarProps {
   onAddGoal: () => void
 }
 
-export function MobileTabBar({ activeTab, onTabChange, onAddGoal }: MobileTabBarProps) {
+export function MobileTabBar({ activeTab, onTabChange }: Omit<MobileTabBarProps, 'onAddGoal'>) {
   const navItems = [
     { id: 'overview' as const, label: 'Overview', icon: LayoutGrid },
     { id: 'goals' as const, label: 'Goals', icon: List },
@@ -86,13 +86,13 @@ export function MobileTabBar({ activeTab, onTabChange, onAddGoal }: MobileTabBar
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 glass border-t border-glass-border safe-bottom">
-      <div className="flex items-center justify-around h-16 px-2">
-        {navItems.map((item, index) => (
+      <div className="flex items-center justify-around h-16 px-4">
+        {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onTabChange(item.id)}
             className={cn(
-              'flex flex-col items-center gap-1 py-2 px-3 transition-colors min-w-0',
+              'flex flex-col items-center gap-1 py-2 px-4 transition-colors min-w-0',
               activeTab === item.id
                 ? 'text-success'
                 : 'text-muted-foreground'
@@ -102,15 +102,6 @@ export function MobileTabBar({ activeTab, onTabChange, onAddGoal }: MobileTabBar
             <span className="text-[10px] font-medium truncate">{item.label}</span>
           </button>
         ))}
-
-        {/* Floating Add Button */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={onAddGoal}
-          className="absolute left-1/2 -translate-x-1/2 -top-6 w-12 h-12 rounded-full bg-success text-success-foreground flex items-center justify-center shadow-lg shadow-success/30"
-        >
-          <Plus className="w-5 h-5" />
-        </motion.button>
       </div>
     </nav>
   )

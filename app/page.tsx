@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Plus } from 'lucide-react'
 import { DesktopSidebar, MobileTabBar, TabType } from '@/components/navigation'
 import { OverviewView, GoalsListView, TotalProgressView } from '@/components/views'
 import { EditGoalSheet } from '@/components/edit-goal-sheet'
@@ -55,10 +56,17 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 min-h-screen pb-24 md:pb-0">
         {/* Mobile Header */}
-        <header className="md:hidden glass border-b border-glass-border px-5 py-4 safe-top">
+        <header className="md:hidden glass border-b border-glass-border px-5 pt-12 pb-4 safe-top flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">
             {getTabTitle()}
           </h1>
+          <button
+            onClick={handleAddGoal}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1"
+            aria-label="Add new goal"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </header>
 
         {/* Desktop Header */}
@@ -115,7 +123,6 @@ export default function Home() {
       <MobileTabBar
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onAddGoal={handleAddGoal}
       />
 
       {/* Edit/Add Goal Sheet */}
