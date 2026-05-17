@@ -70,22 +70,26 @@ export default function Home() {
             {getTabTitle()}
           </h1>
           {activeTab === 'total' ? (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               onClick={() => setIsEditingOrder(!isEditingOrder)}
-              className={`text-sm font-semibold transition-colors ${
-                isEditingOrder ? 'text-blue-500' : 'text-muted-foreground hover:text-foreground'
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border backdrop-blur-md ${
+                isEditingOrder 
+                  ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' 
+                  : 'bg-white/5 border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10'
               }`}
             >
               {isEditingOrder ? 'Done' : 'Edit'}
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.9 }}
               onClick={handleAddGoal}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1"
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/10 backdrop-blur-md text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all"
               aria-label="Add new goal"
             >
-              <Plus className="w-5 h-5" />
-            </button>
+              <Plus className="w-4 h-4" />
+            </motion.button>
           )}
         </header>
 

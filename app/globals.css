@@ -169,6 +169,31 @@
   border: 1px solid var(--glass-border);
 }
 
+/* Ultra glass for floating elements */
+.glass-ultra {
+  background: oklch(0 0 0 / 0.5);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid oklch(1 0 0 / 0.1);
+}
+
+/* Liquid glass button style */
+.glass-button {
+  background: oklch(1 0 0 / 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  transition: all 0.2s ease;
+}
+
+.glass-button:hover {
+  background: oklch(1 0 0 / 0.1);
+}
+
+.glass-button:active {
+  transform: scale(0.95);
+}
+
 /* iOS-style progress track */
 .progress-track {
   background: linear-gradient(

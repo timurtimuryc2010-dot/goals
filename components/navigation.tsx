@@ -74,10 +74,9 @@ export function DesktopSidebar({ activeTab, onTabChange, onAddGoal }: DesktopSid
 interface MobileTabBarProps {
   activeTab: TabType
   onTabChange: (tab: TabType) => void
-  onAddGoal: () => void
 }
 
-export function MobileTabBar({ activeTab, onTabChange }: Omit<MobileTabBarProps, 'onAddGoal'>) {
+export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
   const navItems = [
     { id: 'overview' as const, label: 'Overview', icon: LayoutGrid },
     { id: 'goals' as const, label: 'Goals', icon: List },
@@ -85,23 +84,42 @@ export function MobileTabBar({ activeTab, onTabChange }: Omit<MobileTabBarProps,
   ]
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 glass border-t border-glass-border safe-bottom">
-      <div className="flex items-center justify-around h-16 px-4">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onTabChange(item.id)}
-            className={cn(
-              'flex flex-col items-center gap-1 py-2 px-4 transition-colors min-w-0',
-              activeTab === item.id
-                ? 'text-success'
-                : 'text-muted-foreground'
-            )}
-          >
-            <item.icon className="w-5 h-5" />
-            <span className="text-[10px] font-medium truncate">{item.label}</span>
-          </button>
-        ))}
+    <nav className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-md">
+      <div className="relative bg-black/50 backdrop-blur-xl border border-white/10 rounded-full px-2 py-2 shadow-2xl shadow-black/50">
+        {/* Liquid Glass Sliding Pill Indicator */}
+        <motion.div
+          layoutId="mobile-tab-indicator"
+          className="absolute top-2 bottom-2 bg-white/10 backdrop-blur-md rounded-full border border-white/5"
+          style={{
+            width: `calc(${100 / navItems.length}% - 8px)`,
+            left: `calc(${(navItems.findIndex(item => item.id === activeTab) * 100) / navItems.length}% + 4px)`,
+          }}
+          transition={{ 
+            type: 'spring', 
+            stiffness: 400, 
+            damping: 30,
+            mass: 0.8
+          }}
+        />
+        
+        {/* Tab Buttons */}
+        <div className="relative flex items-center justify-around">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onTabChange(item.id)}
+              className={cn(
+                'flex-1 flex flex-col items-center gap-0.5 py-2 px-3 transition-colors relative z-10',
+                activeTab === item.id
+                  ? 'text-white'
+                  : 'text-white/40'
+              )}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </nav>
   )
