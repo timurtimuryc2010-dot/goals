@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Minus, Pencil, Trash2, Check, ImagePlus } from 'lucide-react'
+import { Plus, Minus, Pencil, Trash2, Check, ImagePlus, Pin, ChevronUp, ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useGoals, Goal } from './goal-provider'
 import { cn } from '@/lib/utils'
@@ -11,10 +11,21 @@ interface GoalCardProps {
   variant?: 'grid' | 'list' | 'ladder'
   onEdit?: () => void
   showActions?: boolean
+  showPinControls?: boolean
+  isFirstPinned?: boolean
+  isLastPinned?: boolean
 }
 
-export function GoalCard({ goal, variant = 'grid', onEdit, showActions = true }: GoalCardProps) {
-  const { adjustAmount, deleteGoal } = useGoals()
+export function GoalCard({ 
+  goal, 
+  variant = 'grid', 
+  onEdit, 
+  showActions = true,
+  showPinControls = false,
+  isFirstPinned = false,
+  isLastPinned = false,
+}: GoalCardProps) {
+  const { adjustAmount, deleteGoal, togglePin, reorderPinned } = useGoals()
   const [showParticles, setShowParticles] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
   const [customAmount, setCustomAmount] = useState('')
@@ -85,8 +96,10 @@ export function GoalCard({ goal, variant = 'grid', onEdit, showActions = true }:
         className={cn(
           'relative rounded-2xl p-4 transition-all duration-500',
           isCompleted
-            ? 'bg-success/10 border border-success/30'
-            : 'bg-card border border-border',
+            ? 'bg-success/10 border border-success/30 opacity-60'
+            : goal.isPinned
+              ? 'bg-card border-2 border-success/40'
+              : 'bg-card border border-border',
           justCompleted && 'success-glow'
         )}
       >
@@ -113,6 +126,30 @@ export function GoalCard({ goal, variant = 'grid', onEdit, showActions = true }:
         </AnimatePresence>
 
         <div className="flex items-center gap-3">
+          {/* Pin Controls for pinned goals */}
+          {showPinControls && goal.isPinned && !isCompleted && (
+            <div className="flex flex-col gap-0.5 -ml-1">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => reorderPinned(goal.id, 'up')}
+                disabled={isFirstPinned}
+                className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Move up"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => reorderPinned(goal.id, 'down')}
+                disabled={isLastPinned}
+                className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Move down"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.button>
+            </div>
+          )}
+
           {/* Goal Image */}
           {goal.image && (
             <div className="h-12 w-12 flex-shrink-0 rounded-xl overflow-hidden">
@@ -127,18 +164,41 @@ export function GoalCard({ goal, variant = 'grid', onEdit, showActions = true }:
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <h3 className="font-semibold text-foreground truncate text-sm">
-                {goal.name}
-              </h3>
-              {isCompleted && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="flex-shrink-0 w-5 h-5 rounded-full bg-success flex items-center justify-center"
-                >
-                  <Check className="w-3 h-3 text-success-foreground" />
-                </motion.div>
-              )}
+              <div className="flex items-center gap-2 min-w-0">
+                {goal.isPinned && (
+                  <Pin className="w-3 h-3 text-success flex-shrink-0 fill-success" />
+                )}
+                <h3 className="font-semibold text-foreground truncate text-sm">
+                  {goal.name}
+                </h3>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Pin Toggle */}
+                {showPinControls && !isCompleted && (
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => togglePin(goal.id)}
+                    className={cn(
+                      "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                      goal.isPinned
+                        ? "bg-success/20 text-success"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    )}
+                    aria-label={goal.isPinned ? "Unpin goal" : "Pin goal"}
+                  >
+                    <Pin className={cn("w-3.5 h-3.5", goal.isPinned && "fill-current")} />
+                  </motion.button>
+                )}
+                {isCompleted && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-5 h-5 rounded-full bg-success flex items-center justify-center"
+                  >
+                    <Check className="w-3 h-3 text-success-foreground" />
+                  </motion.div>
+                )}
+              </div>
             </div>
 
             {/* Progress Bar */}
@@ -181,7 +241,9 @@ export function GoalCard({ goal, variant = 'grid', onEdit, showActions = true }:
         'relative rounded-2xl p-4 transition-all duration-500',
         isCompleted
           ? 'bg-success/10 border border-success/30'
-          : 'bg-card border border-border',
+          : goal.isPinned
+            ? 'bg-card border-2 border-success/40'
+            : 'bg-card border border-border',
         justCompleted && 'success-glow',
         variant === 'list' && 'flex items-center gap-4'
       )}
@@ -230,18 +292,41 @@ export function GoalCard({ goal, variant = 'grid', onEdit, showActions = true }:
       <div className={cn('flex-1', variant === 'list' && 'min-w-0')}>
         {/* Header */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-foreground truncate text-base">
-            {goal.name}
-          </h3>
-          {isCompleted && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="flex-shrink-0 w-5 h-5 rounded-full bg-success flex items-center justify-center"
-            >
-              <Check className="w-3 h-3 text-success-foreground" />
-            </motion.div>
-          )}
+          <div className="flex items-center gap-2 min-w-0">
+            {goal.isPinned && (
+              <Pin className="w-3.5 h-3.5 text-success flex-shrink-0 fill-success" />
+            )}
+            <h3 className="font-semibold text-foreground truncate text-base">
+              {goal.name}
+            </h3>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Pin Toggle */}
+            {showActions && !isCompleted && (
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => togglePin(goal.id)}
+                className={cn(
+                  "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                  goal.isPinned
+                    ? "bg-success/20 text-success"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                )}
+                aria-label={goal.isPinned ? "Unpin goal" : "Pin goal"}
+              >
+                <Pin className={cn("w-3.5 h-3.5", goal.isPinned && "fill-current")} />
+              </motion.button>
+            )}
+            {isCompleted && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex-shrink-0 w-5 h-5 rounded-full bg-success flex items-center justify-center"
+              >
+                <Check className="w-3 h-3 text-success-foreground" />
+              </motion.div>
+            )}
+          </div>
         </div>
 
         {/* Amount Display */}
