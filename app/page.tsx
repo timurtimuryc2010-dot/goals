@@ -88,7 +88,7 @@ export default function Home() {
           }}
         >
           {/* Left Action Button */}
-          <div className="absolute left-5 top-1/2 -translate-y-1/2 pt-5">
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 pt-5 translate-y-1">
             {activeTab === 'total' ? (
               <motion.button
                 whileTap={{ scale: 0.92 }}
