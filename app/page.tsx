@@ -79,7 +79,7 @@ export default function Home() {
       <main className="flex-1 min-h-screen pb-24 md:pb-0">
         {/* Mobile Header - Telegram-Style with Centered Title */}
         <header 
-          className="md:hidden fixed top-0 left-0 right-0 z-40 px-5 pt-16 pb-4 border-b transition-all duration-150"
+          className="md:hidden fixed top-0 left-0 right-0 z-40 px-5 pt-14 pb-4 border-b transition-all duration-150"
           style={{
             backgroundColor: `rgba(0, 0, 0, ${headerOpacity * 0.6})`,
             backdropFilter: `blur(${headerOpacity * 20}px) saturate(${100 + headerOpacity * 80}%)`,
@@ -87,43 +87,40 @@ export default function Home() {
             borderColor: `rgba(255, 255, 255, ${headerOpacity * 0.1})`,
           }}
         >
-          {/* Header Content Row - Flexbox for perfect alignment */}
-          <div className="flex items-center justify-center relative">
-            {/* Left Action Button - Absolutely positioned */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2">
-              {activeTab === 'total' ? (
-                <motion.button
-                  whileTap={{ scale: 0.92 }}
-                  onClick={() => setIsEditingOrder(!isEditingOrder)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border backdrop-blur-md ${
-                    isEditingOrder 
-                      ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' 
-                      : 'bg-white/5 border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10'
-                  }`}
-                >
-                  {isEditingOrder ? 'Done' : 'Edit'}
-                </motion.button>
-              ) : (
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleAddGoal}
-                  className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/10 backdrop-blur-md text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all"
-                  aria-label="Add new goal"
-                >
-                  <Plus className="w-4 h-4" />
-                </motion.button>
-              )}
-            </div>
-
-            {/* Centered Title */}
-            <h1 className="text-lg font-semibold text-foreground">
-              {getTabTitle()}
-            </h1>
+          {/* Left Action Button */}
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 pt-5">
+            {activeTab === 'total' ? (
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                onClick={() => setIsEditingOrder(!isEditingOrder)}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all border backdrop-blur-md ${
+                  isEditingOrder 
+                    ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' 
+                    : 'bg-white/5 border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10'
+                }`}
+              >
+                {isEditingOrder ? 'Done' : 'Edit'}
+              </motion.button>
+            ) : (
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleAddGoal}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-white/5 border border-white/10 backdrop-blur-md text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all"
+                aria-label="Add new goal"
+              >
+                <Plus className="w-4 h-4" />
+              </motion.button>
+            )}
           </div>
+
+          {/* Centered Title */}
+          <h1 className="text-lg font-semibold text-foreground text-center">
+            {getTabTitle()}
+          </h1>
         </header>
 
         {/* Mobile Header Spacer */}
-        <div className="md:hidden h-28" />
+        <div className="md:hidden h-24" />
 
         {/* Desktop Header - with Edit button for Total tab */}
         <header 
