@@ -47,17 +47,29 @@ export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
     
+    const trimmedName = name.trim()
+    const currentAmount = parseFloat(current) || 0
+    const targetAmount = parseFloat(target) || 0
+
+    // Validate required fields
+    if (!trimmedName || targetAmount <= 0) {
+      console.log('[v0] Validation failed:', { trimmedName, targetAmount })
+      return
+    }
+
     const goalData = {
-      name: name.trim(),
-      current: parseFloat(current) || 0,
-      target: parseFloat(target) || 0,
+      name: trimmedName,
+      current: currentAmount,
+      target: targetAmount,
       image,
     }
 
-    if (!goalData.name || !goalData.target) return
+    console.log('[v0] Submitting goal:', goalData, 'isEditing:', isEditing)
 
     if (isEditing && goal) {
       updateGoal(goal.id, goalData)
@@ -119,7 +131,8 @@ export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
                 {isEditing ? 'Edit Goal' : 'New Goal'}
               </h2>
               <button
-                onClick={handleSubmit}
+                type="button"
+                onClick={() => handleSubmit()}
                 disabled={!name.trim() || !target}
                 className="text-sm font-semibold text-success disabled:text-muted-foreground transition-colors"
               >
