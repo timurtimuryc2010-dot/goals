@@ -8,9 +8,10 @@ import { OverviewView, GoalsListView, TotalProgressView } from '@/components/vie
 import { EditGoalSheet } from '@/components/edit-goal-sheet'
 import { Goal, useGoals } from '@/components/goal-provider'
 import { GoalSectionFilter } from '@/components/views'
+import { ListFilterBar } from '@/components/list-filter-bar'
 
 export default function Home() {
-  const { sections, addSection } = useGoals()
+  const { sections, addSection, deleteSection } = useGoals()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [sectionFilter, setSectionFilter] = useState<GoalSectionFilter>(null)
   const [isListSheetOpen, setIsListSheetOpen] = useState(false)
@@ -191,25 +192,12 @@ export default function Home() {
                 Add List
               </button>
             </div>
-            {sections.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter goals by list">
-                {[{ id: null, name: 'All' }, { id: 'unsorted', name: 'Unsorted' }, ...sections.map(section => ({ id: section.id, name: section.name }))].map(item => (
-                  <button
-                    key={item.id ?? 'all'}
-                    type="button"
-                    onClick={() => setSectionFilter(item.id as GoalSectionFilter)}
-                    aria-pressed={sectionFilter === item.id}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                      sectionFilter === item.id
-                        ? 'border-success/40 bg-success/15 text-success'
-                        : 'border-border bg-card text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {item.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            <ListFilterBar
+              sections={sections}
+              sectionFilter={sectionFilter}
+              onSectionFilterChange={setSectionFilter}
+              onDeleteSection={deleteSection}
+            />
           </section>
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && (
