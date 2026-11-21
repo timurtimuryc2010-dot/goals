@@ -9,14 +9,16 @@ interface EditGoalSheetProps {
   goal?: Goal | null
   isOpen: boolean
   onClose: () => void
+  defaultSectionId?: string
 }
 
-export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
-  const { addGoal, updateGoal, deleteGoal } = useGoals()
+export function EditGoalSheet({ goal, isOpen, onClose, defaultSectionId }: EditGoalSheetProps) {
+  const { addGoal, updateGoal, deleteGoal, sections } = useGoals()
   const [name, setName] = useState('')
   const [current, setCurrent] = useState('')
   const [target, setTarget] = useState('')
   const [image, setImage] = useState<string | undefined>()
+  const [sectionId, setSectionId] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isEditing = !!goal
@@ -28,11 +30,13 @@ export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
       setCurrent(goal.current.toString())
       setTarget(goal.target.toString())
       setImage(goal.image)
+      setSectionId(goal.sectionId ?? '')
     } else if (isOpen) {
       setName('')
       setCurrent('')
       setTarget('')
       setImage(undefined)
+      setSectionId(defaultSectionId ?? '')
     }
   }, [isOpen, goal])
 
@@ -67,6 +71,7 @@ export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
       current: currentAmount,
       target: targetAmount,
       image,
+      sectionId: sectionId || undefined,
     }
 
     console.log('[v0] Submitting goal:', goalData, 'isEditing:', isEditing)
@@ -169,6 +174,25 @@ export function EditGoalSheet({ goal, isOpen, onClose }: EditGoalSheetProps) {
                   )}
                 </motion.button>
               </div>
+
+              {sections.length > 0 && (
+                <div className="space-y-2">
+                  <label htmlFor="goal-section" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    List
+                  </label>
+                  <select
+                    id="goal-section"
+                    value={sectionId}
+                    onChange={event => setSectionId(event.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-success/50"
+                  >
+                    <option value="">Unsorted</option>
+                    {sections.map(section => (
+                      <option key={section.id} value={section.id}>{section.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Goal Name */}
               <div className="space-y-2">
