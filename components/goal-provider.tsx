@@ -13,16 +13,26 @@ export interface Goal {
   completedAt?: number
   isPinned?: boolean
   pinOrder?: number
+  sectionId?: string
+}
+
+export interface GoalSection {
+  id: string
+  name: string
+  createdAt: number
 }
 
 interface GoalContextType {
   goals: Goal[]
+  sections: GoalSection[]
+  addSection: (name: string) => string
+
   addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void
   updateGoal: (id: string, updates: Partial<Goal>) => void
   deleteGoal: (id: string) => void
   adjustAmount: (id: string, amount: number) => void
-  globalAddMoney: (amount: number) => void
-  globalDeductMoney: (amount: number) => void
+  globalAddMoney: (amount: number, scopeIds?: string[]) => void
+  globalDeductMoney: (amount: number, scopeIds?: string[]) => void
   getTotalBalance: () => number
   togglePin: (id: string) => void
   reorderPinned: (id: string, direction: 'up' | 'down') => void
@@ -32,27 +42,36 @@ const GoalContext = createContext<GoalContextType | undefined>(undefined)
 
 export function GoalProvider({ children }: { children: ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([])
+  const [sections, setSections] = useState<GoalSection[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load goals from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('goals')
-    if (stored) {
-      try {
-        setGoals(JSON.parse(stored))
-      } catch (e) {
-        console.error('Failed to parse stored goals:', e)
-      }
+    try {
+      const storedGoals = localStorage.getItem('goals')
+      const storedSections = localStorage.getItem('goal-sections')
+      if (storedGoals) setGoals(JSON.parse(storedGoals))
+      if (storedSections) setSections(JSON.parse(storedSections))
+    } catch (error) {
+      console.error('Failed to load saved goals or lists:', error)
     }
     setIsLoaded(true)
   }, [])
 
-  // Save goals to localStorage whenever they change
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('goals', JSON.stringify(goals))
+    if (!isLoaded) return
+    localStorage.setItem('goals', JSON.stringify(goals))
+    localStorage.setItem('goal-sections', JSON.stringify(sections))
+  }, [goals, sections, isLoaded])
+
+  const addSection = (name: string) => {
+    const section: GoalSection = {
+      id: uuidv4(),
+      name: name.trim(),
+      createdAt: Date.now(),
     }
-  }, [goals, isLoaded])
+    setSections(previous => [...previous, section])
+    return section.id
+  }
 
   const addGoal = (goal: Omit<Goal, 'id' | 'createdAt'>) => {
     const newGoal: Goal = {
@@ -168,16 +187,17 @@ export function GoalProvider({ children }: { children: ReactNode }) {
   }
 
   // Global add money - prioritizes pinned incomplete goals first, then closest to completion
-  const globalAddMoney = (amount: number) => {
-    if (amount <= 0) return
+  const globalAddMoney = (amount: number, scopeIds?: string[]) => {
+    if (!Number.isFinite(amount) || amount <= 0) return
+    const scope = scopeIds ? new Set(scopeIds) : null
 
     setGoals(prev => {
-      // Separate pinned and unpinned incomplete goals
-      const pinnedIncomplete = prev
+      const scopedGoals = scope ? prev.filter(goal => scope.has(goal.id)) : prev
+      const pinnedIncomplete = scopedGoals
         .filter(g => g.isPinned && g.current < g.target)
         .sort((a, b) => (a.pinOrder ?? 0) - (b.pinOrder ?? 0))
       
-      const unpinnedIncomplete = prev
+      const unpinnedIncomplete = scopedGoals
         .filter(g => !g.isPinned && g.current < g.target)
         .sort((a, b) => {
           // Sort by proximity to completion (highest percentage first)
@@ -220,9 +240,9 @@ export function GoalProvider({ children }: { children: ReactNode }) {
           ...existing,
           current: existing.current + remaining
         })
-      } else if (remaining > 0 && prev.length > 0) {
-        // If no incomplete goals, add to any goal
-        const anyGoal = prev[0]
+      } else if (remaining > 0 && scopedGoals.length > 0) {
+        // If no incomplete goals, add overflow within the current list
+        const anyGoal = scopedGoals[0]
         updatedGoals.set(anyGoal.id, {
           ...anyGoal,
           current: anyGoal.current + remaining
@@ -234,12 +254,13 @@ export function GoalProvider({ children }: { children: ReactNode }) {
   }
 
   // Global deduct money - removes from most recently funded active goal
-  const globalDeductMoney = (amount: number) => {
-    if (amount <= 0) return
+  const globalDeductMoney = (amount: number, scopeIds?: string[]) => {
+    if (!Number.isFinite(amount) || amount <= 0) return
+    const scope = scopeIds ? new Set(scopeIds) : null
 
     setGoals(prev => {
-      // Sort by target (descending) - most expensive first for deduction
-      const sortedByTarget = [...prev].sort((a, b) => b.target - a.target)
+      const scopedGoals = scope ? prev.filter(goal => scope.has(goal.id)) : prev
+      const sortedByTarget = [...scopedGoals].sort((a, b) => b.target - a.target)
       let remaining = amount
       const updatedGoals = new Map<string, Goal>()
 
@@ -268,7 +289,9 @@ export function GoalProvider({ children }: { children: ReactNode }) {
 
   return (
     <GoalContext.Provider value={{ 
-      goals, 
+      goals,
+      sections,
+      addSection,
       addGoal, 
       updateGoal, 
       deleteGoal, 

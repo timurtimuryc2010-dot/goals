@@ -7,12 +7,25 @@ import { useState, useRef } from 'react'
 import { Plus, Minus, ArrowUp, TrendingUp, Pin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface OverviewViewProps {
+export type GoalSectionFilter = string | 'unsorted' | null
+
+function useGoalsForSection(sectionFilter: GoalSectionFilter) {
+  const { goals } = useGoals()
+  if (sectionFilter === null) return goals
+  if (sectionFilter === 'unsorted') return goals.filter(goal => !goal.sectionId)
+  return goals.filter(goal => goal.sectionId === sectionFilter)
+}
+
+interface SectionFilteredViewProps {
+  sectionFilter?: GoalSectionFilter
+}
+
+interface OverviewViewProps extends SectionFilteredViewProps {
   onEditGoal: (goal: Goal) => void
 }
 
-export function OverviewView({ onEditGoal }: OverviewViewProps) {
-  const { goals } = useGoals()
+export function OverviewView({ onEditGoal, sectionFilter = null }: OverviewViewProps) {
+  const goals = useGoalsForSection(sectionFilter)
 
   // Calculate stats
   const totalTarget = goals.reduce((sum, g) => sum + g.target, 0)
@@ -111,12 +124,12 @@ export function OverviewView({ onEditGoal }: OverviewViewProps) {
   )
 }
 
-interface GoalsListViewProps {
+interface GoalsListViewProps extends SectionFilteredViewProps {
   onEditGoal: (goal: Goal) => void
 }
 
-export function GoalsListView({ onEditGoal }: GoalsListViewProps) {
-  const { goals } = useGoals()
+export function GoalsListView({ onEditGoal, sectionFilter = null }: GoalsListViewProps) {
+  const goals = useGoalsForSection(sectionFilter)
 
   // Sort goals: incomplete first (by percentage), then completed
   const sortedGoals = [...goals].sort((a, b) => {
@@ -189,17 +202,19 @@ export function GoalsListView({ onEditGoal }: GoalsListViewProps) {
 }
 
 // Total Progress View - New Global Dashboard
-interface TotalProgressViewProps {
+interface TotalProgressViewProps extends SectionFilteredViewProps {
   isEditingOrder?: boolean
 }
 
-export function TotalProgressView({ isEditingOrder = false }: TotalProgressViewProps) {
-  const { goals, globalAddMoney, globalDeductMoney, getTotalBalance } = useGoals()
+export function TotalProgressView({ isEditingOrder = false, sectionFilter = null }: TotalProgressViewProps) {
+  const { globalAddMoney, globalDeductMoney } = useGoals()
+  const goals = useGoalsForSection(sectionFilter)
+  const goalScope = goals.map(goal => goal.id)
   const [customAmount, setCustomAmount] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const totalBalance = getTotalBalance()
+  const totalBalance = goals.reduce((sum, goal) => sum + goal.current, 0)
   const totalTarget = goals.reduce((sum, g) => sum + g.target, 0)
   const overallProgress = totalTarget > 0 ? (totalBalance / totalTarget) * 100 : 0
 
@@ -238,7 +253,7 @@ export function TotalProgressView({ isEditingOrder = false }: TotalProgressViewP
   const handleGlobalAdd = () => {
     const amount = parseFloat(customAmount)
     if (!isNaN(amount) && amount > 0) {
-      globalAddMoney(amount)
+      globalAddMoney(amount, goalScope)
       setCustomAmount('')
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 1500)
@@ -248,7 +263,7 @@ export function TotalProgressView({ isEditingOrder = false }: TotalProgressViewP
   const handleGlobalDeduct = () => {
     const amount = parseFloat(customAmount)
     if (!isNaN(amount) && amount > 0) {
-      globalDeductMoney(amount)
+      globalDeductMoney(amount, goalScope)
       setCustomAmount('')
     }
   }
