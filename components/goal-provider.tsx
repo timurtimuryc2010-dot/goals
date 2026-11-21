@@ -26,6 +26,7 @@ interface GoalContextType {
   goals: Goal[]
   sections: GoalSection[]
   addSection: (name: string) => string
+  deleteSection: (id: string) => void
 
   addGoal: (goal: Omit<Goal, 'id' | 'createdAt'>) => void
   updateGoal: (id: string, updates: Partial<Goal>) => void
@@ -71,6 +72,15 @@ export function GoalProvider({ children }: { children: ReactNode }) {
     }
     setSections(previous => [...previous, section])
     return section.id
+  }
+
+  const deleteSection = (id: string) => {
+    setSections(previous => previous.filter(section => section.id !== id))
+    setGoals(previous =>
+      previous.map(goal =>
+        goal.sectionId === id ? { ...goal, sectionId: undefined } : goal
+      )
+    )
   }
 
   const addGoal = (goal: Omit<Goal, 'id' | 'createdAt'>) => {
@@ -292,6 +302,7 @@ export function GoalProvider({ children }: { children: ReactNode }) {
       goals,
       sections,
       addSection,
+      deleteSection,
       addGoal, 
       updateGoal, 
       deleteGoal, 
